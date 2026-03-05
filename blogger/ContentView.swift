@@ -21,6 +21,9 @@ struct ContentView: View {
     }
 
     private func loadDroppedPhotos(_ providers: [NSItemProvider]) {
+        // Capture settings values on the main thread before going async
+        let imageURLPrefix = settings.imageURLPrefix
+
         let group = DispatchGroup()
         var photos: [ExportedPhoto] = []
         let lock = NSLock()
@@ -30,29 +33,32 @@ struct ContentView: View {
             group.enter()
             provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
                 defer { group.leave() }
+
                 guard let data = item as? Data,
                       let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
 
                 let uti = UTType(filenameExtension: url.pathExtension)
                 guard uti?.conforms(to: .image) == true else { return }
+
                 guard let imageData = try? Data(contentsOf: url) else { return }
 
                 let exifDate = PhotoExporter.readEXIFDate(from: imageData) ?? Date()
-                let filename = PhotoExporter.exportedFilename(originalName: url.lastPathComponent, date: exifDate)
-                let markdownPath = PhotoExporter.markdownImagePath(filename: filename, settings: settings)
+                let filename = PhotoExporter.exportedFilename(
+                    originalName: url.lastPathComponent, date: exifDate)
 
-                // Copy into pending directory
-                if let pendingDir = SharedContainerService.pendingDirectoryURL {
-                    try? FileManager.default.createDirectory(at: pendingDir, withIntermediateDirectories: true)
-                    let dest = pendingDir.appendingPathComponent(filename)
-                    try? FileManager.default.copyItem(at: url, to: dest)
+                let prefix = imageURLPrefix.hasSuffix("/") ? imageURLPrefix : imageURLPrefix + "/"
+                let markdownPath = "\(prefix)\(filename)"
 
-                    let photo = ExportedPhoto(filename: filename, markdownPath: markdownPath,
-                                              localURL: dest, exifDate: exifDate)
-                    lock.lock()
-                    photos.append(photo)
-                    lock.unlock()
-                }
+                // Use the original file URL directly — no App Group needed
+                let photo = ExportedPhoto(
+                    filename: filename,
+                    markdownPath: markdownPath,
+                    localURL: url,
+                    exifDate: exifDate
+                )
+                lock.lock()
+                photos.append(photo)
+                lock.unlock()
             }
         }
 
