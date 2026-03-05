@@ -1,0 +1,52 @@
+name: Build Blogger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: |
+          curl -sL https://github.com/yonaskolb/XcodeGen/releases/download/2.45.2/xcodegen.zip \
+            -o /tmp/xcodegen.zip
+          unzip -q /tmp/xcodegen.zip -d /tmp/xcodegen_bin
+          chmod +x /tmp/xcodegen_bin/xcodegen/bin/xcodegen
+
+      - name: Generate Xcode project
+        run: /tmp/xcodegen_bin/xcodegen/bin/xcodegen generate --spec project.yml
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project Blogger.xcodeproj \
+            -scheme Blogger \
+            -configuration Release \
+            -derivedDataPath build \
+            -destination "platform=macOS" \
+            ONLY_ACTIVE_ARCH=NO \
+            ARCHS="x86_64 arm64" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package app
+        run: |
+          APP_PATH=$(find build -name "Blogger.app" -type d | head -1)
+          echo "Found: $APP_PATH"
+          ditto -c -k --keepParent "$APP_PATH" Blogger.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Blogger-macOS
+          path: Blogger.zip
+          retention-days: 30

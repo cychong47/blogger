@@ -1,0 +1,97 @@
+name: Blogger
+
+options:
+  bundleIdPrefix: com.blogger
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""  # Fill in your Team ID
+
+targets:
+  Blogger:
+    type: application
+    platform: macOS
+    sources:
+      - path: blogger
+        excludes: []
+      - path: Shared
+    info:
+      path: blogger/Info.plist
+      properties:
+        CFBundleIdentifier: com.blogger.app
+        CFBundleName: Blogger
+        CFBundleDisplayName: Blogger
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSMinimumSystemVersion: "13.0"
+        NSPrincipalClass: NSApplication
+        CFBundleURLTypes:
+          - CFBundleURLName: com.blogger.app
+            CFBundleURLSchemes:
+              - blogger
+    entitlements:
+      path: blogger/Blogger.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.application-groups:
+          - group.com.blogger.app
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blogger.app
+        INFOPLIST_FILE: blogger/Info.plist
+
+  BloggerShareExtension:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: BloggerShareExtension
+    info:
+      path: BloggerShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Blogger
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsImageWithMaxCount: 50
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+    entitlements:
+      path: BloggerShareExtension/BloggerShareExtension.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - group.com.blogger.app
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blogger.app.ShareExtension
+        INFOPLIST_FILE: BloggerShareExtension/Info.plist
+    dependencies:
+      - sdk: ImageIO.framework
+
+schemes:
+  Blogger:
+    build:
+      targets:
+        Blogger: all
+        BloggerShareExtension: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
