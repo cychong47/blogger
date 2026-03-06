@@ -27,6 +27,8 @@ struct BloggerApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var pendingPost: PendingPost?
 
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls where url.scheme == Constants.urlScheme {
             loadPendingPost()
