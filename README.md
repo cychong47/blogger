@@ -1,0 +1,192 @@
+# Blogger
+
+A native macOS app for creating [Hugo](https://gohugo.io/) blog posts from photos.
+Drag photos from Photos.app or Finder, write a post in the split-view editor, and publish directly to your Hugo site.
+
+---
+
+## Usage
+
+### 1. Configure Settings
+
+Open **Settings** (`⌘,`) before first use.
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Content Posts** path | Hugo `content/posts` directory | `/Users/you/blog/content/posts` |
+| **Static Images** path | Hugo `static/images` directory | `/Users/you/blog/static/images` |
+| **Content Posts** subpath | Date-based subdirectory template | `YYYY/MM` → `2026/03` |
+| **Static Images** subpath | Date-based subdirectory template | `YYYY/MM` → `2026/03` |
+| **URL Prefix** | Base URL used in markdown image refs | `/images` |
+
+**Subpath tokens:** `YYYY` (4-digit year), `MM` (2-digit month), `DD` (2-digit day).
+Leave a subpath empty to put all files flat in the root directory.
+
+**Categories — Scan Posts:** Click **Scan Posts** to collect all existing `categories:` values from your Hugo markdown files. The list is saved and shown as options when writing new posts. Re-scan any time after adding posts outside the app.
+
+---
+
+### 2. Import Photos
+
+Drag photos from **Photos.app** or **Finder** and drop them onto the app window.
+
+- Photos are copied to a staging area while you compose the post.
+- EXIF `DateTimeOriginal` is read from each photo to derive the date prefix.
+- Filenames are normalised: `2026-03-05-IMG_1234.jpg`
+- Duplicate photos (same filename) are ignored if dropped again.
+- A progress bar is shown during import.
+
+---
+
+### 3. Write the Post
+
+The editor opens automatically once photos are imported.
+
+| Field | Description |
+|-------|-------------|
+| **Title** | Post title. Also auto-generates the filename slug. |
+| **Filename** | `YYYY-MM-DD-slug.md` — the date prefix comes from the first photo's EXIF date. Edit the slug part freely. |
+| **Categories** | Pick from known categories (populated by Scan Posts) or add a new one inline. Selections are reflected in the frontmatter immediately. |
+
+The **left pane** is a plain-text markdown editor pre-filled with Hugo frontmatter and image references.
+The **right pane** shows thumbnails of the staged photos with their filenames.
+
+The staging folder location is shown above the photo list — click the arrow button to reveal it in Finder.
+
+---
+
+### 4. Publish
+
+Press **Publish** (`⌘⇧↩`) to:
+
+1. Copy photos from the staging area to `{staticImagesPath}/{resolvedSubpath}/`
+2. Write the markdown file to `{contentPath}/{resolvedSubpath}/YYYY-MM-DD-slug.md`
+3. Show the saved file path in a confirmation dialog
+
+After confirming, staged photo files are deleted automatically.
+
+Press **Reset** to discard the current post and delete staged files without publishing.
+
+---
+
+### 5. Deploy
+
+Run Hugo and copy the output to your server as usual:
+
+```bash
+cd /path/to/your/hugo/site
+hugo
+rsync -av public/ user@server:/var/www/html/
+```
+
+---
+
+## Configuration Storage
+
+Settings are stored in **macOS UserDefaults** as a `.plist` file — no SQLite, no custom file format.
+
+**File location:**
+```
+~/Library/Group Containers/group.com.blogger.app/Library/Preferences/group.com.blogger.app.plist
+```
+
+**Inspect from Terminal:**
+```bash
+defaults read group.com.blogger.app
+```
+
+**Keys stored:**
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `contentPath` | String | `""` | Hugo content/posts directory path |
+| `staticImagesPath` | String | `""` | Hugo static/images directory path |
+| `imageURLPrefix` | String | `/images` | URL prefix for markdown image references |
+| `contentSubpath` | String | `YYYY/MM` | Subpath template under contentPath |
+| `staticImagesSubpath` | String | `""` | Subpath template under staticImagesPath |
+| `knownCategories` | [String] | `[]` | Categories collected from existing posts |
+
+**Why App Group UserDefaults?**
+The preference suite `group.com.blogger.app` was designed to be shared between the main app and a Share Extension (so both targets can read the same settings). The data lands in `~/Library/Group Containers/` rather than the standard `~/Library/Preferences/`.
+
+---
+
+## Building
+
+The project uses [xcodegen](https://github.com/yonaskolb/XcodeGen) to generate the `.xcodeproj`.
+
+### GitHub Actions (recommended)
+
+Push to `main` — the [build workflow](.github/workflows/build.yml) runs automatically on a macOS runner, builds the app unsigned, and uploads `Blogger.zip` as a downloadable artifact.
+
+1. Go to **Actions** → latest **Build Blogger** run → **Artifacts** → download `Blogger.zip`
+2. Unzip and move `Blogger.app` to `/Applications`
+3. On first launch macOS may block the app. Go to **System Settings → Privacy & Security** and click **Open Anyway**, or run:
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Blogger.app
+   ```
+
+### Local (no Xcode required)
+
+```bash
+# Download xcodegen
+mkdir -p /tmp/xcodegen_bin
+curl -L https://github.com/yonaskolb/XcodeGen/releases/latest/download/xcodegen.zip \
+  -o /tmp/xcodegen.zip
+unzip /tmp/xcodegen.zip -d /tmp/xcodegen_bin
+
+# Generate project and build
+/tmp/xcodegen_bin/xcodegen/bin/xcodegen generate
+xcodebuild -project Blogger.xcodeproj -scheme Blogger \
+  -configuration Release CODE_SIGNING_ALLOWED=NO \
+  -derivedDataPath build
+```
+
+---
+
+## Project Structure
+
+```
+blogger/
+├── project.yml                          # xcodegen configuration
+├── .github/workflows/build.yml          # GitHub Actions CI build
+├── Shared/
+│   └── Constants.swift                  # App Group ID, URL scheme, UserDefaults keys
+├── blogger/                             # Main app target
+│   ├── BloggerApp.swift                 # App entry point, URL scheme handler
+│   ├── ContentView.swift                # Root view (editor or welcome screen)
+│   ├── Models/
+│   │   ├── AppSettings.swift            # UserDefaults-backed settings (ObservableObject)
+│   │   └── PendingPost.swift            # In-memory post state (ObservableObject)
+│   ├── Views/
+│   │   ├── PostEditorView.swift         # Split-view markdown editor + photo gallery
+│   │   ├── SettingsView.swift           # Preferences window
+│   │   ├── WelcomeView.swift            # Drop zone shown before photos are imported
+│   │   └── DropTargetView.swift         # NSView subclass handling drag-and-drop
+│   └── Services/
+│       ├── PhotoExporter.swift          # EXIF reading, filename generation, file copy
+│       ├── MarkdownGenerator.swift      # Frontmatter + markdown assembly + file write
+│       ├── CategoryScanner.swift        # Scans .md files to extract categories
+│       ├── SlugGenerator.swift          # String → URL-safe slug
+│       └── SharedContainerService.swift # App Group container read/write helpers
+└── BloggerShareExtension/               # Share Extension target (Photos.app integration)
+    ├── ShareViewController.swift
+    └── Info.plist
+```
+
+---
+
+## Generated Frontmatter
+
+```yaml
+---
+title: "My Post Title"
+date: "2026-03-07"
+draft: false
+categories: ["Vancouver"]
+tags: []
+---
+
+![](/images/2026/03/2026-03-07-photo1.jpg)
+![](/images/2026/03/2026-03-07-photo2.jpg)
+```
