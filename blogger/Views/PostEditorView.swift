@@ -65,23 +65,29 @@ struct PostEditorView: View {
                     Text("Categories:")
                         .frame(width: 60, alignment: .trailing)
                         .foregroundStyle(.secondary)
-                    // Selected category chips
-                    ForEach(pendingPost.categories, id: \.self) { cat in
-                        HStack(spacing: 3) {
-                            Text(cat).font(.caption)
-                            Button {
-                                pendingPost.categories.removeAll { $0 == cat }
-                                updateFrontmatterCategories(pendingPost.categories)
-                            } label: {
-                                Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                    // Chips in a horizontal scroll so they never push other items
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(pendingPost.categories, id: \.self) { cat in
+                                HStack(spacing: 3) {
+                                    Text(cat).font(.caption)
+                                    Button {
+                                        pendingPost.categories.removeAll { $0 == cat }
+                                        updateFrontmatterCategories(pendingPost.categories)
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 8, weight: .bold))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.accentColor.opacity(0.15))
+                                .cornerRadius(4)
                             }
-                            .buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color.accentColor.opacity(0.15))
-                        .cornerRadius(4)
                     }
+                    .fixedSize(horizontal: false, vertical: true)
                     // Add button
                     Menu {
                         ForEach(availableCategories, id: \.self) { cat in
@@ -97,7 +103,7 @@ struct PostEditorView: View {
                             .foregroundStyle(.secondary)
                     }
                     .menuStyle(.borderlessButton)
-                    .fixedSize()
+                    .frame(width: 22, height: 22)
                     // Inline new category input
                     if showNewCategoryField {
                         TextField("Category name", text: $newCategoryText)
