@@ -12,6 +12,26 @@ struct SettingsView: View {
                           prompt: "e.g. /Users/you/blog/static/images")
             }
 
+            Section {
+                LabeledContent("Subpath Template") {
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField("YYYY/MM", text: $settings.contentSubpath)
+                            .frame(maxWidth: 200)
+                        Text("Tokens: YYYY · MM · DD")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if !settings.contentSubpath.isEmpty {
+                            let preview = AppSettings.resolveSubpath(settings.contentSubpath, for: Date())
+                            Text("Preview: …/\(preview)/slug.md")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Content Post Subpath")
+            }
+
             Section("Image URL") {
                 LabeledContent("URL Prefix") {
                     TextField("/images", text: $settings.imageURLPrefix)

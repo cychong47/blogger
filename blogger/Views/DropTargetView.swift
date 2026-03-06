@@ -7,6 +7,7 @@ class DropTargetView: NSView {
     var onFilesDropped: (([ExportedPhoto]) -> Void)?
     var onDragEntered: (() -> Void)?
     var onDragExited: (() -> Void)?
+    var onImportStarted: (() -> Void)?
 
     // Single serial queue — prevents concurrent NSPasteboard access crash (macOS 13)
     private let promiseQueue: OperationQueue = {
@@ -73,6 +74,8 @@ class DropTargetView: NSView {
         let hasPromises = pasteboard.pasteboardItems?.contains { item in
             item.types.contains { promiseTypeStrings.contains($0.rawValue) }
         } ?? false
+
+        onImportStarted?()
 
         if hasPromises {
             let receivers = (pasteboard.readObjects(forClasses: [NSFilePromiseReceiver.self],

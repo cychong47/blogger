@@ -15,6 +15,12 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(imageURLPrefix, forKey: Constants.UserDefaultsKeys.imageURLPrefix) }
     }
 
+    /// Subpath template under contentPath, e.g. "YYYY/MM" → 2026/03
+    /// Tokens: YYYY = 4-digit year, MM = 2-digit month, DD = 2-digit day
+    @Published var contentSubpath: String {
+        didSet { defaults.set(contentSubpath, forKey: Constants.UserDefaultsKeys.contentSubpath) }
+    }
+
     init() {
         guard let defaults = UserDefaults(suiteName: Constants.appGroupID) else {
             fatalError("Cannot access App Group UserDefaults: \(Constants.appGroupID)")
@@ -23,6 +29,19 @@ class AppSettings: ObservableObject {
         self.contentPath = defaults.string(forKey: Constants.UserDefaultsKeys.contentPath) ?? ""
         self.staticImagesPath = defaults.string(forKey: Constants.UserDefaultsKeys.staticImagesPath) ?? ""
         self.imageURLPrefix = defaults.string(forKey: Constants.UserDefaultsKeys.imageURLPrefix) ?? "/images"
+        self.contentSubpath = defaults.string(forKey: Constants.UserDefaultsKeys.contentSubpath) ?? "YYYY/MM"
+    }
+
+    /// Resolves a subpath template against a date.
+    static func resolveSubpath(_ template: String, for date: Date) -> String {
+        let cal = Calendar.current
+        let year  = String(format: "%04d", cal.component(.year,  from: date))
+        let month = String(format: "%02d", cal.component(.month, from: date))
+        let day   = String(format: "%02d", cal.component(.day,   from: date))
+        return template
+            .replacingOccurrences(of: "YYYY", with: year)
+            .replacingOccurrences(of: "MM",   with: month)
+            .replacingOccurrences(of: "DD",   with: day)
     }
 
     var isConfigured: Bool {

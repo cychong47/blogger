@@ -16,8 +16,9 @@ enum PhotoExporter {
             .replacingOccurrences(of: " ", with: "-")
             .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_")).inverted)
             .joined()
+        let normalised = ext.lowercased() == "jpeg" ? "jpg" : ext.lowercased()
         let filename = "\(dateStr)-\(sanitised)"
-        return ext.isEmpty ? filename : "\(filename).\(ext)"
+        return normalised.isEmpty ? filename : "\(filename).\(normalised)"
     }
 
     static func markdownImagePath(filename: String, settings: AppSettings) -> String {

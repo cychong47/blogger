@@ -27,19 +27,16 @@ enum MarkdownGenerator {
         let imageRefs = photos.map { imageReference(markdownPath: $0.markdownPath) }
         parts.append(contentsOf: imageRefs)
         parts.append("")
-        parts.append("") // cursor position placeholder
+        parts.append("")
         return parts.joined(separator: "\n")
     }
 
     static func write(content: String, slug: String, date: Date, settings: AppSettings) throws -> URL {
-        let calendar = Calendar.current
-        let year = calendar.component(.year, from: date)
-        let month = calendar.component(.month, from: date)
-        let monthStr = String(format: "%02d", month)
-
-        let destDir = URL(fileURLWithPath: settings.contentPath)
-            .appendingPathComponent("\(year)", isDirectory: true)
-            .appendingPathComponent(monthStr, isDirectory: true)
+        let subpath = AppSettings.resolveSubpath(settings.contentSubpath, for: date)
+        var destDir = URL(fileURLWithPath: settings.contentPath)
+        if !subpath.isEmpty {
+            destDir = destDir.appendingPathComponent(subpath, isDirectory: true)
+        }
 
         try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
 

@@ -26,6 +26,7 @@ struct PostEditorView: View {
                     TextField("Post title", text: $pendingPost.title)
                         .onChange(of: pendingPost.title) { newValue in
                             pendingPost.slug = SlugGenerator.slugify(newValue)
+                            updateFrontmatterTitle(newValue)
                         }
                 }
                 HStack {
@@ -128,6 +129,15 @@ struct PostEditorView: View {
             Text("This will discard all photos and text. Staged image files will be deleted.")
         }
         .onAppear { prepopulateMarkdown() }
+    }
+
+    private func updateFrontmatterTitle(_ newTitle: String) {
+        guard !pendingPost.markdownBody.isEmpty else { return }
+        let escaped = newTitle.replacingOccurrences(of: "\"", with: "\\\"")
+        // Replace only the title: "..." line inside the frontmatter
+        if let range = pendingPost.markdownBody.range(of: #"(?m)^title: ".*"$"#, options: .regularExpression) {
+            pendingPost.markdownBody.replaceSubrange(range, with: "title: \"\(escaped)\"")
+        }
     }
 
     private func prepopulateMarkdown() {
