@@ -24,6 +24,7 @@ class PendingPost: ObservableObject {
     @Published var title: String = ""
     @Published var slug: String = ""
     @Published var markdownBody: String = ""
+    @Published var categories: [String] = []
 
     var isEmpty: Bool { photos.isEmpty && title.isEmpty }
 
@@ -32,5 +33,6 @@ class PendingPost: ObservableObject {
         title = ""
         slug = ""
         markdownBody = ""
+        categories = []
     }
 }

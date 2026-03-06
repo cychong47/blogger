@@ -25,6 +25,11 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(staticImagesSubpath, forKey: Constants.UserDefaultsKeys.staticImagesSubpath) }
     }
 
+    /// Categories collected from existing posts
+    @Published var knownCategories: [String] {
+        didSet { defaults.set(knownCategories, forKey: Constants.UserDefaultsKeys.knownCategories) }
+    }
+
     init() {
         guard let defaults = UserDefaults(suiteName: Constants.appGroupID) else {
             fatalError("Cannot access App Group UserDefaults: \(Constants.appGroupID)")
@@ -35,6 +40,7 @@ class AppSettings: ObservableObject {
         self.imageURLPrefix = defaults.string(forKey: Constants.UserDefaultsKeys.imageURLPrefix) ?? "/images"
         self.contentSubpath = defaults.string(forKey: Constants.UserDefaultsKeys.contentSubpath) ?? "YYYY/MM"
         self.staticImagesSubpath = defaults.string(forKey: Constants.UserDefaultsKeys.staticImagesSubpath) ?? ""
+        self.knownCategories = defaults.stringArray(forKey: Constants.UserDefaultsKeys.knownCategories) ?? []
     }
 
     /// Resolves a subpath template against a date.

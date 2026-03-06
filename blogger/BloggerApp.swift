@@ -52,7 +52,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 post.markdownBody = MarkdownGenerator.initialMarkdown(
                     title: post.title,
                     date: firstDate,
-                    photos: photos
+                    photos: photos,
+                    categories: post.categories
                 )
             }
         } catch {

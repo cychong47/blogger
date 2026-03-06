@@ -70,7 +70,7 @@ struct ContentView: View {
         }
 
         pendingPost.markdownBody = MarkdownGenerator.initialMarkdown(
-            title: pendingPost.title, date: date, photos: allPhotos)
+            title: pendingPost.title, date: date, photos: allPhotos, categories: pendingPost.categories)
     }
 }
 

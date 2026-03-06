@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
+    @State private var isScanning = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -65,6 +66,41 @@ struct SettingsView: View {
             }
             .padding(.top, 4)
 
+            Divider().padding(.vertical, 16)
+
+            // ── Categories ────────────────────────────────────────────
+            HStack {
+                SectionLabel("Categories")
+                Spacer()
+                Button(isScanning ? "Scanning…" : "Scan Posts") {
+                    guard !settings.contentPath.isEmpty else { return }
+                    isScanning = true
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        let found = CategoryScanner.scan(contentPath: settings.contentPath)
+                        DispatchQueue.main.async {
+                            // Merge with any manually added categories
+                            let merged = Array(Set(settings.knownCategories + found)).sorted()
+                            settings.knownCategories = merged
+                            isScanning = false
+                        }
+                    }
+                }
+                .disabled(settings.contentPath.isEmpty || isScanning)
+            }
+
+            if settings.knownCategories.isEmpty {
+                Text(settings.contentPath.isEmpty
+                     ? "Set the Content Posts path above, then scan."
+                     : "No categories found. Click \"Scan Posts\" to collect from existing posts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            } else {
+                // Tag chips with remove buttons
+                CategoryTagsEditor(categories: $settings.knownCategories)
+                    .padding(.top, 4)
+            }
+
             Spacer()
 
             HStack {
@@ -75,7 +111,7 @@ struct SettingsView: View {
             }
         }
         .padding(24)
-        .frame(width: 620, height: 390)
+        .frame(width: 620, height: 500)
     }
 }
 
@@ -117,6 +153,99 @@ private struct PathRow: View {
         if panel.runModal() == .OK, let url = panel.url {
             path = url.path
         }
+    }
+}
+
+private struct CategoryTagsEditor: View {
+    @Binding var categories: [String]
+    @State private var newText = ""
+    @State private var showInput = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            FlexWrap(items: categories) { cat in
+                HStack(spacing: 3) {
+                    Text(cat).font(.caption)
+                    Button {
+                        categories.removeAll { $0 == cat }
+                    } label: {
+                        Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Color.secondary.opacity(0.15))
+                .cornerRadius(4)
+            }
+            HStack(spacing: 6) {
+                if showInput {
+                    TextField("New category", text: $newText)
+                        .frame(width: 160)
+                        .onSubmit { commitNew() }
+                    Button("Add") { commitNew() }
+                    Button("Cancel") { showInput = false; newText = "" }
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button("+ Add category") { showInput = true }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.accentColor)
+                        .font(.caption)
+                }
+            }
+        }
+    }
+
+    private func commitNew() {
+        let trimmed = newText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty && !categories.contains(trimmed) {
+            categories = (categories + [trimmed]).sorted()
+        }
+        newText = ""
+        showInput = false
+    }
+}
+
+/// Simple left-to-right wrapping layout for tag chips.
+private struct FlexWrap<Item: Hashable, Content: View>: View {
+    let items: [Item]
+    let content: (Item) -> Content
+    @State private var totalHeight: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { geo in
+            self.layout(in: geo.size.width)
+        }
+        .frame(height: totalHeight)
+    }
+
+    private func layout(in width: CGFloat) -> some View {
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        let spacing: CGFloat = 6
+        let rowHeight: CGFloat = 24
+
+        return ZStack(alignment: .topLeading) {
+            ForEach(items, id: \.self) { item in
+                content(item)
+                    .alignmentGuide(.leading) { d in
+                        if x + d.width > width {
+                            x = 0; y += rowHeight + spacing
+                        }
+                        let result = -x
+                        if item == items.last { x = 0; y += rowHeight }
+                        else { x += d.width + spacing }
+                        return result
+                    }
+                    .alignmentGuide(.top) { _ in -y }
+            }
+        }
+        .background(
+            GeometryReader { geo in
+                Color.clear.onAppear { totalHeight = geo.size.height }
+                    .onChange(of: items) { _ in totalHeight = geo.size.height }
+            }
+        )
     }
 }
 

@@ -9,6 +9,8 @@ struct PostEditorView: View {
     @State private var publishedPath = ""
     @State private var publishError: String?
     @State private var showResetConfirm = false
+    @State private var newCategoryText = ""
+    @State private var showNewCategoryField = false
 
     private var stagingDirectory: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -54,6 +56,60 @@ struct PostEditorView: View {
                         .font(.system(.body, design: .monospaced))
                     Text(".md")
                         .foregroundStyle(.secondary)
+                }
+                HStack(alignment: .center, spacing: 6) {
+                    Text("Categories:")
+                        .frame(width: 60, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                    // Selected category chips
+                    ForEach(pendingPost.categories, id: \.self) { cat in
+                        HStack(spacing: 3) {
+                            Text(cat).font(.caption)
+                            Button {
+                                pendingPost.categories.removeAll { $0 == cat }
+                                updateFrontmatterCategories(pendingPost.categories)
+                            } label: {
+                                Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.accentColor.opacity(0.15))
+                        .cornerRadius(4)
+                    }
+                    // Add button
+                    let available = settings.knownCategories.filter { !pendingPost.categories.contains($0) }
+                    Menu {
+                        ForEach(available, id: \.self) { cat in
+                            Button(cat) {
+                                pendingPost.categories.append(cat)
+                                updateFrontmatterCategories(pendingPost.categories)
+                            }
+                        }
+                        if !available.isEmpty { Divider() }
+                        Button("New…") { showNewCategoryField = true }
+                    } label: {
+                        Image(systemName: "plus.circle")
+                            .foregroundStyle(.secondary)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    // Inline new category input
+                    if showNewCategoryField {
+                        TextField("Category name", text: $newCategoryText)
+                            .frame(width: 130)
+                            .onSubmit {
+                                let trimmed = newCategoryText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !trimmed.isEmpty && !pendingPost.categories.contains(trimmed) {
+                                    pendingPost.categories.append(trimmed)
+                                    updateFrontmatterCategories(pendingPost.categories)
+                                }
+                                newCategoryText = ""
+                                showNewCategoryField = false
+                            }
+                    }
+                    Spacer()
                 }
             }
             .padding(.horizontal)
@@ -163,8 +219,18 @@ struct PostEditorView: View {
         pendingPost.markdownBody = MarkdownGenerator.initialMarkdown(
             title: pendingPost.title,
             date: date,
-            photos: pendingPost.photos
+            photos: pendingPost.photos,
+            categories: pendingPost.categories
         )
+    }
+
+    private func updateFrontmatterCategories(_ categories: [String]) {
+        guard !pendingPost.markdownBody.isEmpty else { return }
+        let catsStr = categories.map { "\"\($0)\"" }.joined(separator: ", ")
+        if let range = pendingPost.markdownBody.range(
+            of: #"(?m)^categories: \[.*\]$"#, options: .regularExpression) {
+            pendingPost.markdownBody.replaceSubrange(range, with: "categories: [\(catsStr)]")
+        }
     }
 
     private func publish() {

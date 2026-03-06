@@ -7,14 +7,15 @@ enum MarkdownGenerator {
         return f
     }()
 
-    static func frontmatter(title: String, date: Date) -> String {
+    static func frontmatter(title: String, date: Date, categories: [String] = []) -> String {
         let dateStr = dateFormatter.string(from: date)
+        let catsStr = categories.map { "\"\($0)\"" }.joined(separator: ", ")
         return """
         ---
         title: "\(title)"
         date: "\(dateStr)"
         draft: false
-        categories: []
+        categories: [\(catsStr)]
         tags: []
         ---
         """
@@ -24,8 +25,8 @@ enum MarkdownGenerator {
         "![](\(markdownPath))"
     }
 
-    static func initialMarkdown(title: String, date: Date, photos: [ExportedPhoto]) -> String {
-        var parts: [String] = [frontmatter(title: title, date: date), ""]
+    static func initialMarkdown(title: String, date: Date, photos: [ExportedPhoto], categories: [String] = []) -> String {
+        var parts: [String] = [frontmatter(title: title, date: date, categories: categories), ""]
         let imageRefs = photos.map { imageReference(markdownPath: $0.markdownPath) }
         parts.append(contentsOf: imageRefs)
         parts.append("")
