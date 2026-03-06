@@ -46,23 +46,21 @@ struct SettingsView: View {
             // ── Image URL ─────────────────────────────────────────────
             SectionLabel("Image URL")
 
-            HStack(alignment: .top) {
+            HStack(alignment: .center, spacing: 8) {
                 Text("URL Prefix")
                     .frame(width: 110, alignment: .trailing)
                     .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-                VStack(alignment: .leading, spacing: 4) {
-                    TextField("/images", text: $settings.imageURLPrefix)
-                        .frame(maxWidth: 200)
-                    let resolvedSub = AppSettings.resolveSubpath(settings.staticImagesSubpath, for: Date())
-                    let rawPrefix = settings.imageURLPrefix.isEmpty ? "/images" : settings.imageURLPrefix
-                    let resolvedPrefix = AppSettings.resolveSubpath(rawPrefix, for: Date())
-                    let slash = resolvedPrefix.hasSuffix("/") ? resolvedPrefix : resolvedPrefix + "/"
-                    let preview = resolvedSub.isEmpty ? String(slash.dropLast()) : slash + resolvedSub
-                    Text("→ \(preview)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                TextField("/images", text: $settings.imageURLPrefix)
+                    .frame(maxWidth: 200)
+                let resolvedSub = AppSettings.resolveSubpath(settings.staticImagesSubpath, for: Date())
+                let rawPrefix = settings.imageURLPrefix.isEmpty ? "/images" : settings.imageURLPrefix
+                let resolvedPrefix = AppSettings.resolveSubpath(rawPrefix, for: Date())
+                let slash = resolvedPrefix.hasSuffix("/") ? resolvedPrefix : resolvedPrefix + "/"
+                let preview = resolvedSub.isEmpty ? String(slash.dropLast()) : slash + resolvedSub
+                Text("→ \(preview)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
             }
             .padding(.top, 4)
 
