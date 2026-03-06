@@ -8,7 +8,12 @@ struct PostEditorView: View {
     @State private var showPublishSuccess = false
     @State private var publishedPath = ""
     @State private var publishError: String?
-    @State private var showError = false
+    @State private var showResetConfirm = false
+
+    private var stagingDirectory: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return appSupport.appendingPathComponent("Blogger/pending", isDirectory: true)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,19 +44,47 @@ struct PostEditorView: View {
             Divider()
 
             HSplitView {
-                // Left: markdown editor
+                // Left: markdown editor (fully editable)
                 TextEditor(text: $pendingPost.markdownBody)
                     .font(.system(.body, design: .monospaced))
                     .frame(minWidth: 300)
 
                 // Right: photo gallery
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        ForEach(pendingPost.photos) { photo in
-                            PhotoThumbnailView(photo: photo)
+                VStack(spacing: 0) {
+                    // Staging location info
+                    HStack(spacing: 4) {
+                        Image(systemName: "folder")
+                            .font(.caption2)
+                        Text(stagingDirectory.path)
+                            .font(.caption2)
+                            .lineLimit(1)
+                            .truncationMode(.head)
+                            .help(stagingDirectory.path)
+                        Spacer()
+                        Button {
+                            NSWorkspace.shared.open(stagingDirectory)
+                        } label: {
+                            Image(systemName: "arrow.right.circle")
+                                .font(.caption2)
                         }
+                        .buttonStyle(.plain)
+                        .help("Reveal in Finder")
                     }
-                    .padding()
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .foregroundStyle(.secondary)
+                    .background(Color(NSColor.windowBackgroundColor))
+
+                    Divider()
+
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(pendingPost.photos) { photo in
+                                PhotoThumbnailView(photo: photo)
+                            }
+                        }
+                        .padding()
+                    }
                 }
                 .frame(minWidth: 200, maxWidth: 360)
                 .background(Color(NSColor.controlBackgroundColor))
@@ -68,6 +101,8 @@ struct PostEditorView: View {
                         .truncationMode(.tail)
                 }
                 Spacer()
+                Button("Reset") { showResetConfirm = true }
+                    .foregroundStyle(.red)
                 Button("Publish") { publish() }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return, modifiers: [.command, .shift])
@@ -76,9 +111,21 @@ struct PostEditorView: View {
             .padding(.vertical, 8)
         }
         .alert("Post Published", isPresented: $showPublishSuccess) {
-            Button("OK") { clearState() }
+            Button("OK") {
+                deleteStagingFiles()
+                pendingPost.clear()
+            }
         } message: {
             Text("Saved to:\n\(publishedPath)")
+        }
+        .confirmationDialog("Reset post?", isPresented: $showResetConfirm, titleVisibility: .visible) {
+            Button("Reset", role: .destructive) {
+                deleteStagingFiles()
+                pendingPost.clear()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will discard all photos and text. Staged image files will be deleted.")
         }
         .onAppear { prepopulateMarkdown() }
     }
@@ -106,29 +153,31 @@ struct PostEditorView: View {
 
         let date = pendingPost.photos.first?.exifDate ?? Date()
         do {
-            // Copy photos to static dir
             try PhotoExporter.copyPendingToStatic(photos: pendingPost.photos, settings: settings)
-
-            // Write markdown file
             let fileURL = try MarkdownGenerator.write(
                 content: pendingPost.markdownBody,
                 slug: pendingPost.slug,
                 date: date,
                 settings: settings
             )
-
-            // Clear App Group pending data
-            try SharedContainerService.clearPending()
-
             publishedPath = fileURL.path
             showPublishSuccess = true
+            // Staging files are deleted in the alert OK handler after user sees the path
         } catch {
             publishError = error.localizedDescription
         }
     }
 
-    private func clearState() {
-        pendingPost.clear()
+    private func deleteStagingFiles() {
+        let fm = FileManager.default
+        for photo in pendingPost.photos {
+            try? fm.removeItem(at: photo.localURL)
+        }
+        // Remove staging dir if now empty
+        if let contents = try? fm.contentsOfDirectory(atPath: stagingDirectory.path),
+           contents.isEmpty {
+            try? fm.removeItem(at: stagingDirectory)
+        }
     }
 }
 

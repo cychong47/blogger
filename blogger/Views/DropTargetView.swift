@@ -43,6 +43,11 @@ class DropTargetView: NSView {
         registerForDraggedTypes(promiseTypes + [.fileURL])
     }
 
+    // Pass all normal mouse events through to SwiftUI views below.
+    // Drag events are still received because they use registerForDraggedTypes,
+    // which is independent of hit-testing.
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
     // MARK: - NSDraggingDestination
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {

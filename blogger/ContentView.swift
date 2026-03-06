@@ -21,7 +21,10 @@ struct ContentView: View {
 
     private func handleDroppedPhotos(_ photos: [ExportedPhoto]) {
         guard !photos.isEmpty else { return }
-        pendingPost.photos.append(contentsOf: photos)
+        let existingFilenames = Set(pendingPost.photos.map(\.filename))
+        let newPhotos = photos.filter { !existingFilenames.contains($0.filename) }
+        guard !newPhotos.isEmpty else { return }
+        pendingPost.photos.append(contentsOf: newPhotos)
 
         let allPhotos = pendingPost.photos
         let date = allPhotos.first?.exifDate ?? Date()
