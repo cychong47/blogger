@@ -41,7 +41,7 @@ struct PostEditorView: View {
             VStack(spacing: 8) {
                 HStack {
                     Text("Title:")
-                        .frame(width: 60, alignment: .trailing)
+                        .frame(width: 80, alignment: .trailing)
                         .foregroundStyle(.secondary)
                     TextField("Post title", text: $pendingPost.title)
                         .onChange(of: pendingPost.title) { newValue in
@@ -51,7 +51,7 @@ struct PostEditorView: View {
                 }
                 HStack {
                     Text("Filename:")
-                        .frame(width: 60, alignment: .trailing)
+                        .frame(width: 80, alignment: .trailing)
                         .foregroundStyle(.secondary)
                     Text(datePrefix + "-")
                         .font(.system(.body, design: .monospaced))
