@@ -60,6 +60,7 @@ enum PhotoExporter {
                 try FileManager.default.removeItem(at: dest)
             }
             try FileManager.default.copyItem(at: photo.localURL, to: dest)
+            try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: dest.path)
         }
     }
 }
