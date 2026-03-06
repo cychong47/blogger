@@ -15,6 +15,20 @@ struct PostEditorView: View {
         return appSupport.appendingPathComponent("Blogger/pending", isDirectory: true)
     }
 
+    private var postDate: Date { pendingPost.photos.first?.exifDate ?? Date() }
+
+    private var datePrefix: String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: postDate)
+    }
+
+    /// Full filename shown to the user and used when publishing
+    private var fullFilename: String {
+        let slug = pendingPost.slug.isEmpty ? "untitled" : pendingPost.slug
+        return "\(datePrefix)-\(slug)"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header fields
@@ -32,6 +46,9 @@ struct PostEditorView: View {
                 HStack {
                     Text("Filename:")
                         .frame(width: 60, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                    Text(datePrefix + "-")
+                        .font(.system(.body, design: .monospaced))
                         .foregroundStyle(.secondary)
                     TextField("slug", text: $pendingPost.slug)
                         .font(.system(.body, design: .monospaced))
@@ -166,7 +183,7 @@ struct PostEditorView: View {
             try PhotoExporter.copyPendingToStatic(photos: pendingPost.photos, settings: settings)
             let fileURL = try MarkdownGenerator.write(
                 content: pendingPost.markdownBody,
-                slug: pendingPost.slug,
+                filename: fullFilename,
                 date: date,
                 settings: settings
             )

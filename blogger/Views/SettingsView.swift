@@ -45,25 +45,36 @@ struct SettingsView: View {
             // ── Image URL ─────────────────────────────────────────────
             SectionLabel("Image URL")
 
-            HStack {
+            HStack(alignment: .top) {
                 Text("URL Prefix")
                     .frame(width: 110, alignment: .trailing)
                     .foregroundStyle(.secondary)
-                TextField("/images", text: $settings.imageURLPrefix)
-                    .frame(maxWidth: 200)
+                    .padding(.top, 4)
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("/images", text: $settings.imageURLPrefix)
+                        .frame(maxWidth: 200)
+                    let resolvedSub = AppSettings.resolveSubpath(settings.staticImagesSubpath, for: Date())
+                    let prefix = settings.imageURLPrefix.isEmpty ? "/images" : settings.imageURLPrefix
+                    let slash = prefix.hasSuffix("/") ? prefix : prefix + "/"
+                    let preview = resolvedSub.isEmpty ? slash : slash + resolvedSub + "/"
+                    Text("→ \(preview)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(.top, 4)
 
             Spacer()
-        }
-        .padding(24)
-        .frame(width: 620, height: 370)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+
+            HStack {
+                Spacer()
                 Button("Done") { NSApp.keyWindow?.close() }
                     .keyboardShortcut(.return, modifiers: [.command])
+                    .buttonStyle(.borderedProminent)
             }
         }
+        .padding(24)
+        .frame(width: 620, height: 390)
     }
 }
 

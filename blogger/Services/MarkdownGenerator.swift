@@ -33,7 +33,7 @@ enum MarkdownGenerator {
         return parts.joined(separator: "\n")
     }
 
-    static func write(content: String, slug: String, date: Date, settings: AppSettings) throws -> URL {
+    static func write(content: String, filename: String, date: Date, settings: AppSettings) throws -> URL {
         let subpath = AppSettings.resolveSubpath(settings.contentSubpath, for: date)
         var destDir = URL(fileURLWithPath: settings.contentPath)
         if !subpath.isEmpty {
@@ -42,7 +42,7 @@ enum MarkdownGenerator {
 
         try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
 
-        let fileURL = destDir.appendingPathComponent("\(slug).md")
+        let fileURL = destDir.appendingPathComponent("\(filename).md")
         try content.write(to: fileURL, atomically: true, encoding: .utf8)
         return fileURL
     }
