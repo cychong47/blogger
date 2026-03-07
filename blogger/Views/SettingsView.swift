@@ -1,8 +1,19 @@
 import SwiftUI
 
+// Codable snapshot of all settings for export/import
+private struct SettingsExport: Codable {
+    var contentPath: String
+    var staticImagesPath: String
+    var imageURLPrefix: String
+    var contentSubpath: String
+    var staticImagesSubpath: String
+    var knownCategories: [String]
+}
+
 struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
     @State private var isScanning = false
+    @State private var importError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -101,7 +112,14 @@ struct SettingsView: View {
 
             Spacer()
 
+            Divider().padding(.vertical, 12)
+
             HStack {
+                Button("Export Settings…") { exportSettings() }
+                Button("Import Settings…") { importSettings() }
+                if let err = importError {
+                    Text(err).foregroundStyle(.red).font(.caption).lineLimit(1)
+                }
                 Spacer()
                 Button("Done") { NSApp.keyWindow?.close() }
                     .keyboardShortcut(.return, modifiers: [.command])
@@ -109,7 +127,51 @@ struct SettingsView: View {
             }
         }
         .padding(24)
-        .frame(width: 620, height: 500)
+        .frame(width: 620, height: 520)
+    }
+
+    // MARK: - Export / Import
+
+    private func exportSettings() {
+        let snapshot = SettingsExport(
+            contentPath: settings.contentPath,
+            staticImagesPath: settings.staticImagesPath,
+            imageURLPrefix: settings.imageURLPrefix,
+            contentSubpath: settings.contentSubpath,
+            staticImagesSubpath: settings.staticImagesSubpath,
+            knownCategories: settings.knownCategories
+        )
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "blogger-settings.json"
+        panel.prompt = "Export"
+        if panel.runModal() == .OK, let url = panel.url {
+            try? data.write(to: url)
+        }
+    }
+
+    private func importSettings() {
+        importError = nil
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Import"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let snapshot = try JSONDecoder().decode(SettingsExport.self, from: data)
+            settings.contentPath = snapshot.contentPath
+            settings.staticImagesPath = snapshot.staticImagesPath
+            settings.imageURLPrefix = snapshot.imageURLPrefix
+            settings.contentSubpath = snapshot.contentSubpath
+            settings.staticImagesSubpath = snapshot.staticImagesSubpath
+            settings.knownCategories = snapshot.knownCategories
+        } catch {
+            importError = "Import failed: \(error.localizedDescription)"
+        }
     }
 }
 
