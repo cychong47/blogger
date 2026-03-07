@@ -159,7 +159,9 @@ struct PostEditorView: View {
                         .background(Theme.card)
                         .cornerRadius(6)
                         .onSubmit {
-                            let trimmed = newCategoryText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let trimmed = newCategoryText
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                                .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
                             if !trimmed.isEmpty && !pendingPost.categories.contains(trimmed) {
                                 pendingPost.categories.append(trimmed)
                                 updateFrontmatterCategories(pendingPost.categories)

@@ -333,7 +333,9 @@ private struct CategoryTagsEditor: View {
     }
 
     private func commitNew() {
-        let trimmed = newText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = newText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
         if !trimmed.isEmpty && !categories.contains(trimmed) {
             categories = (categories + [trimmed]).sorted()
         }
