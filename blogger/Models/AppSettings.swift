@@ -45,10 +45,14 @@ class AppSettings: ObservableObject {
         self.imageURLPrefix = defaults.string(forKey: Constants.UserDefaultsKeys.imageURLPrefix) ?? "/images"
         self.contentSubpath = defaults.string(forKey: Constants.UserDefaultsKeys.contentSubpath) ?? "YYYY/MM"
         self.staticImagesSubpath = defaults.string(forKey: Constants.UserDefaultsKeys.staticImagesSubpath) ?? ""
-        // Normalize: strip stray quote characters and deduplicate
+        // Normalize: strip stray quote characters and deduplicate, then persist back
         let raw = defaults.stringArray(forKey: Constants.UserDefaultsKeys.knownCategories) ?? []
-        let normalized = raw.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"'")) }
-        self.knownCategories = Array(NSOrderedSet(array: normalized.filter { !$0.isEmpty })) as? [String] ?? normalized
+        var seen = Set<String>()
+        let normalized = raw
+            .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"'")) }
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
+        self.knownCategories = normalized
+        defaults.set(normalized, forKey: Constants.UserDefaultsKeys.knownCategories)
         self.appTheme = defaults.string(forKey: Constants.UserDefaultsKeys.appTheme) ?? "system"
     }
 
