@@ -130,8 +130,8 @@ struct SettingsView: View {
             Divider().padding(.vertical, 12)
 
             HStack {
-                Button("Export Settings…") { exportSettings() }
-                Button("Import Settings…") { importSettings() }
+                Button("Export…") { exportSettings() }
+                Button("Import…") { importSettings() }
                 if let err = importError {
                     Text(err).foregroundStyle(.red).font(.caption).lineLimit(1)
                 }
