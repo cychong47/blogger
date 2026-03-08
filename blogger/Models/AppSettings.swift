@@ -35,7 +35,9 @@ class AppSettings: ObservableObject {
     func updateActiveProfile(_ block: (inout BlogProfile) -> Void) {
         guard let id = selectedProfileID ?? profiles.first?.id,
               let idx = profiles.firstIndex(where: { $0.id == id }) else { return }
-        block(&profiles[idx])
+        var updated = profiles[idx]
+        block(&updated)
+        profiles[idx] = updated  // explicit assignment ensures @Published fires
     }
 
     // MARK: - Forwarding computed properties (used by service layer)

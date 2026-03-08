@@ -18,25 +18,53 @@ enum CategoryScanner {
         return categories.sorted()
     }
 
-    /// Parses the `categories: [...]` line from a markdown frontmatter block.
+    /// Parses the `categories:` value from a markdown frontmatter block.
+    /// Handles both single-line `categories: ["Cat1", "Cat2"]` and
+    /// multi-line YAML list format:
+    ///   categories:
+    ///     - Cat1
+    ///     - Cat2
     static func parseFrontmatterCategories(from content: String) -> [String] {
-        guard let range = content.range(
+        let quoteChars = CharacterSet(charactersIn: "\"'")
+
+        // Single-line: categories: [Cat1, "Cat2", ...]
+        if let range = content.range(
             of: #"(?m)^categories:\s*\[([^\]]*)\]"#,
             options: .regularExpression
-        ) else { return [] }
-
-        let match = String(content[range])
-        guard let open = match.firstIndex(of: "["),
-              let close = match.lastIndex(of: "]") else { return [] }
-
-        let inside = String(match[match.index(after: open)..<close])
-        guard !inside.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
-
-        return inside.components(separatedBy: ",").compactMap { item in
-            let trimmed = item
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
-            return trimmed.isEmpty ? nil : trimmed
+        ) {
+            let match = String(content[range])
+            if let open = match.firstIndex(of: "["),
+               let close = match.lastIndex(of: "]") {
+                let inside = String(match[match.index(after: open)..<close])
+                guard !inside.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
+                return inside.components(separatedBy: ",").compactMap { item in
+                    let trimmed = item
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .trimmingCharacters(in: quoteChars)
+                    return trimmed.isEmpty ? nil : trimmed
+                }
+            }
         }
+
+        // Multi-line:
+        // categories:
+        //   - Cat1
+        //   - Cat2
+        if let range = content.range(
+            of: #"(?m)^categories:\s*\n((?:[ \t]*-[ \t]+[^\n]+\n?)+)"#,
+            options: .regularExpression
+        ) {
+            let block = String(content[range])
+            return block.components(separatedBy: "\n").compactMap { line in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                guard trimmed.hasPrefix("-") else { return nil }
+                let value = String(trimmed.dropFirst())
+                    .trimmingCharacters(in: .whitespaces)
+                    .trimmingCharacters(in: quoteChars)
+                return value.isEmpty ? nil : value
+            }
+        }
+
+        return []
     }
 }
