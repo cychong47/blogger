@@ -7,6 +7,19 @@ private struct SettingsExport: Codable {
     var appTheme: String
 }
 
+// MARK: - mergeCategories (file-level helper)
+
+private func mergeCategories(_ existing: [String], _ new: [String]) -> [String] {
+    var seen = Set<String>()
+    var result: [String] = []
+    for cat in existing + new {
+        if seen.insert(cat.lowercased()).inserted {
+            result.append(cat)
+        }
+    }
+    return result.sorted()
+}
+
 // MARK: - Root Settings (tab container)
 
 struct SettingsView: View {
@@ -17,13 +30,10 @@ struct SettingsView: View {
             GeneralTab()
                 .tabItem { Label("General", systemImage: "gear") }
 
-            CategoriesTab()
-                .tabItem { Label("Categories", systemImage: "tag") }
-
             AppearanceTab()
                 .tabItem { Label("Appearance", systemImage: "paintpalette") }
         }
-        .frame(width: 540)
+        .frame(width: 740, height: 560)
     }
 }
 
@@ -31,55 +41,25 @@ struct SettingsView: View {
 
 private struct GeneralTab: View {
     @EnvironmentObject var settings: AppSettings
-    @State private var editingProfile: BlogProfile?
-    @State private var profileToDelete: BlogProfile?
-    @State private var importError: String?
+    @State private var editingProfileID: UUID? = nil
+    @State private var profileToDelete: BlogProfile? = nil
+    @State private var importError: String? = nil
+    @State private var isScanning = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-
-            HStack {
-                SectionLabel("Blog Profiles")
-                Spacer()
-                Button {
-                    editingProfile = BlogProfile(name: "")
-                } label: {
-                    Label("Add Profile", systemImage: "plus")
-                }
-                .font(.callout)
-            }
-
-            if settings.profiles.isEmpty {
-                Text("No blog profiles. Click + Add Profile to create one.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 6)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(settings.profiles) { profile in
-                        let isActive = profile.id == (settings.selectedProfileID ?? settings.profiles.first?.id)
-                        ProfileRow(
-                            profile: profile,
-                            isActive: isActive,
-                            onSelect: { settings.selectedProfileID = profile.id },
-                            onEdit:   { editingProfile = profile },
-                            onDelete: { profileToDelete = profile }
-                        )
-                        if profile.id != settings.profiles.last?.id {
-                            Divider().padding(.leading, 40)
-                        }
-                    }
-                }
-                .background(Color(nsColor: .controlBackgroundColor))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+        VStack(spacing: 0) {
+            HSplitView {
+                ProfileSidebarPanel(
+                    editingProfileID: $editingProfileID,
+                    profileToDelete: $profileToDelete
                 )
-                .padding(.top, 4)
+                ProfileDetailPanel(
+                    editingProfileID: $editingProfileID,
+                    isScanning: $isScanning
+                )
             }
 
-            Divider().padding(.vertical, 16)
+            Divider()
 
             HStack(spacing: 8) {
                 Button("Export…") { exportSettings() }
@@ -90,21 +70,13 @@ private struct GeneralTab: View {
                         .font(.caption)
                         .lineLimit(1)
                 }
+                Spacer()
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
-        .padding(24)
-        .sheet(item: $editingProfile) { profile in
-            ProfileEditorSheet(profile: profile) { saved in
-                if let idx = settings.profiles.firstIndex(where: { $0.id == saved.id }) {
-                    settings.profiles[idx] = saved
-                } else {
-                    settings.profiles.append(saved)
-                    settings.selectedProfileID = saved.id
-                }
-                editingProfile = nil
-            } onCancel: {
-                editingProfile = nil
-            }
+        .onAppear {
+            editingProfileID = settings.selectedProfileID ?? settings.profiles.first?.id
         }
         .confirmationDialog(
             "Delete \"\(profileToDelete?.name ?? "")\"?",
@@ -120,6 +92,7 @@ private struct GeneralTab: View {
                     if settings.selectedProfileID == id {
                         settings.selectedProfileID = settings.profiles.first?.id
                     }
+                    editingProfileID = settings.profiles.first?.id
                 }
                 profileToDelete = nil
             }
@@ -155,161 +128,268 @@ private struct GeneralTab: View {
         do {
             let data = try Data(contentsOf: url)
             let s = try JSONDecoder().decode(SettingsExport.self, from: data)
-            settings.profiles        = s.profiles
+            settings.profiles = s.profiles
             settings.selectedProfileID = s.selectedProfileID
-            settings.appTheme        = s.appTheme
+            settings.appTheme = s.appTheme
+            editingProfileID = settings.selectedProfileID
         } catch {
             importError = "Import failed: \(error.localizedDescription)"
         }
     }
 }
 
-// MARK: - Profile row
+// MARK: - Profile Sidebar Panel
 
-private struct ProfileRow: View {
+private struct ProfileSidebarPanel: View {
+    @EnvironmentObject var settings: AppSettings
+    @Binding var editingProfileID: UUID?
+    @Binding var profileToDelete: BlogProfile?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(settings.profiles) { profile in
+                        let isActive = profile.id == (settings.selectedProfileID ?? settings.profiles.first?.id)
+                        let isEditing = profile.id == editingProfileID
+                        ProfileSidebarRow(
+                            profile: profile,
+                            isActive: isActive,
+                            isEditing: isEditing,
+                            onSelect: { editingProfileID = profile.id },
+                            onDelete: { profileToDelete = profile }
+                        )
+                        if profile.id != settings.profiles.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+            }
+
+            Divider()
+
+            Button {
+                let newProfile = BlogProfile(name: "")
+                settings.profiles.append(newProfile)
+                editingProfileID = newProfile.id
+            } label: {
+                HStack {
+                    Image(systemName: "plus")
+                    Text("Add Blog")
+                    Spacer()
+                }
+                .font(.callout)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+        }
+        .background(Color(nsColor: .controlBackgroundColor))
+        .frame(minWidth: 160, idealWidth: 200, maxWidth: 240)
+    }
+}
+
+// MARK: - Profile Sidebar Row
+
+private struct ProfileSidebarRow: View {
     let profile: BlogProfile
     let isActive: Bool
+    let isEditing: Bool
     let onSelect: () -> Void
-    let onEdit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: isActive ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(isActive ? Color.accentColor : .secondary)
-                .font(.system(size: 16))
-                .onTapGesture { onSelect() }
+                .foregroundStyle(isActive ? Color.accentColor : Color.secondary)
+                .font(.system(size: 14))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(profile.name.isEmpty ? "Unnamed" : profile.name)
-                    .fontWeight(.medium)
+                    .font(.callout)
+                    .lineLimit(1)
                 if !profile.blogRoot.isEmpty {
                     Text(profile.blogRoot)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.head)
                 }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { onSelect() }
 
-            Spacer()
-
-            Button("Edit") { onEdit() }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
-                .font(.callout)
-
-            Button {
-                onDelete()
-            } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(.red.opacity(0.7))
-            }
-            .buttonStyle(.plain)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.vertical, 8)
+        .background(isEditing ? Color.accentColor.opacity(0.12) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture { onSelect() }
+        .contextMenu {
+            Button("Delete", role: .destructive) { onDelete() }
+        }
     }
 }
 
-// MARK: - Profile editor sheet
+// MARK: - Profile Detail Panel
 
-private struct ProfileEditorSheet: View {
-    @State private var draft: BlogProfile
-    let onSave: (BlogProfile) -> Void
-    let onCancel: () -> Void
+private struct ProfileDetailPanel: View {
+    @EnvironmentObject var settings: AppSettings
+    @Binding var editingProfileID: UUID?
+    @Binding var isScanning: Bool
 
-    init(profile: BlogProfile, onSave: @escaping (BlogProfile) -> Void, onCancel: @escaping () -> Void) {
-        _draft = State(initialValue: profile)
-        self.onSave = onSave
-        self.onCancel = onCancel
+    @State private var draft = BlogProfile(name: "")
+
+    var isActive: Bool {
+        draft.id == (settings.selectedProfileID ?? settings.profiles.first?.id)
     }
 
-    var isNewProfile: Bool { draft.name.isEmpty && draft.blogRoot.isEmpty && draft.contentPath.isEmpty }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        Group {
+            if editingProfileID == nil || settings.profiles.isEmpty {
+                VStack {
+                    Spacer()
+                    Text(settings.profiles.isEmpty
+                         ? "Click \"+ Add Blog\" to create your first blog profile."
+                         : "Select a blog from the list.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
 
-            Text(isNewProfile ? "New Profile" : "Edit Profile")
-                .font(.headline)
-                .padding(.bottom, 16)
+                        // Name + Active badge
+                        HStack {
+                            TextField("Blog name", text: $draft.name)
+                                .font(.headline)
+                            Spacer()
+                            if isActive {
+                                Text("Active Blog")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.secondary.opacity(0.15))
+                                    .cornerRadius(4)
+                            } else {
+                                Button("Set as Active") {
+                                    settings.selectedProfileID = draft.id
+                                }
+                                .font(.caption)
+                            }
+                        }
+                        .padding(.bottom, 16)
 
-            // Name
-            HStack {
-                Text("Name")
-                    .frame(width: 110, alignment: .trailing)
-                    .foregroundStyle(.secondary)
-                TextField("My Blog", text: $draft.name)
+                        // Blog Root
+                        PathRow(label: "Blog Root",
+                                placeholder: "/Users/you/blog",
+                                path: $draft.blogRoot,
+                                onChoose: pickBlogRoot)
+
+                        Divider().padding(.vertical, 10)
+
+                        HStack(alignment: .top, spacing: 0) {
+                            Text("Hugo Paths")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        .padding(.bottom, 6)
+
+                        PathRow(label: "Content",
+                                placeholder: "/Users/you/blog/content/posts",
+                                path: $draft.contentPath)
+                        PathRow(label: "Images",
+                                placeholder: "/Users/you/blog/static/images",
+                                path: $draft.staticImagesPath)
+
+                        if !draft.blogRoot.isEmpty {
+                            Text("Auto-filled from Blog Root. Edit to override.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.bottom, 6)
+                        }
+
+                        Divider().padding(.vertical, 10)
+
+                        HStack(alignment: .top, spacing: 0) {
+                            Text("Subpath Templates")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("Tokens: YYYY · MM · DD")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 2)
+                        }
+                        .padding(.bottom, 6)
+
+                        HStack(alignment: .top, spacing: 20) {
+                            SubpathField(label: "Content Posts",
+                                         placeholder: "e.g. YYYY/MM",
+                                         value: $draft.contentSubpath,
+                                         previewSuffix: "/slug.md")
+                            SubpathField(label: "Static Images",
+                                         placeholder: "e.g. YYYY/MM  (leave empty for flat)",
+                                         value: $draft.staticImagesSubpath,
+                                         previewSuffix: "/")
+                        }
+                        .padding(.bottom, 10)
+
+                        Divider().padding(.vertical, 10)
+
+                        HStack {
+                            SectionLabel("Categories")
+                            Spacer()
+                            Button(isScanning ? "Scanning…" : "Scan Posts") {
+                                scanCategories()
+                            }
+                            .disabled(draft.contentPath.isEmpty || isScanning)
+                        }
+                        .padding(.bottom, 4)
+
+                        if draft.knownCategories.isEmpty {
+                            Text(draft.contentPath.isEmpty
+                                 ? "Set up content path above, then scan."
+                                 : "No categories yet. Click \"Scan Posts\" to collect from existing posts.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                        } else {
+                            let categoriesBinding = Binding<[String]>(
+                                get: { draft.knownCategories },
+                                set: { draft.knownCategories = $0 }
+                            )
+                            CategoryTagsEditor(categories: categoriesBinding)
+                                .padding(.top, 8)
+                        }
+
+                        Spacer(minLength: 24)
+                    }
+                    .padding(24)
+                }
             }
-            .padding(.bottom, 10)
-
-            // Blog Root
-            PathRow(label: "Blog Root",
-                    placeholder: "/Users/you/blog",
-                    path: $draft.blogRoot,
-                    onChoose: pickBlogRoot)
-
-            Divider().padding(.vertical, 10)
-
-            Text("Hugo Paths")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 6)
-
-            PathRow(label: "Content",
-                    placeholder: "/Users/you/blog/content/posts",
-                    path: $draft.contentPath)
-            PathRow(label: "Images",
-                    placeholder: "/Users/you/blog/static/images",
-                    path: $draft.staticImagesPath)
-
-            if !draft.blogRoot.isEmpty {
-                Text("Auto-filled from Blog Root. Edit to override.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 6)
-            }
-
-            Divider().padding(.vertical, 10)
-
-            HStack(alignment: .top, spacing: 0) {
-                Text("Subpath Templates")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("Tokens: YYYY · MM · DD")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-            }
-            .padding(.bottom, 6)
-
-            HStack(alignment: .top, spacing: 20) {
-                SubpathField(label: "Content Posts",
-                             placeholder: "e.g. YYYY/MM",
-                             value: $draft.contentSubpath,
-                             previewSuffix: "/slug.md")
-                SubpathField(label: "Static Images",
-                             placeholder: "e.g. YYYY/MM  (leave empty for flat)",
-                             value: $draft.staticImagesSubpath,
-                             previewSuffix: "/")
-            }
-
-            Spacer()
-
-            HStack {
-                Spacer()
-                Button("Cancel") { onCancel() }
-                Button("Save") { onSave(draft) }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(draft.name.isEmpty)
-            }
-            .padding(.top, 16)
         }
-        .padding(24)
-        .frame(width: 500, height: 430)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { loadDraft() }
+        .onChange(of: editingProfileID) { _ in loadDraft() }
+        .onChange(of: draft) { newDraft in
+            guard let idx = settings.profiles.firstIndex(where: { $0.id == newDraft.id }),
+                  settings.profiles[idx] != newDraft else { return }
+            settings.profiles[idx] = newDraft
+        }
+    }
+
+    private func loadDraft() {
+        guard let id = editingProfileID,
+              let profile = settings.profiles.first(where: { $0.id == id }) else { return }
+        draft = profile
     }
 
     private func pickBlogRoot() {
@@ -324,7 +404,6 @@ private struct ProfileEditorSheet: View {
         let oldDerivedImages  = draft.blogRoot + "/static/images"
         draft.blogRoot = url.path
         if draft.contentPath.isEmpty || draft.contentPath == oldDerivedContent {
-            // Detect whether this Hugo site uses content/post or content/posts
             let postPath  = url.path + "/content/post"
             let postsPath = url.path + "/content/posts"
             draft.contentPath = fm.fileExists(atPath: postPath) ? postPath : postsPath
@@ -333,80 +412,27 @@ private struct ProfileEditorSheet: View {
             draft.staticImagesPath = url.path + "/static/images"
         }
     }
-}
 
-// MARK: - Categories Tab
-
-private struct CategoriesTab: View {
-    @EnvironmentObject var settings: AppSettings
-    @State private var isScanning = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    SectionLabel("Categories")
-                    if let name = settings.activeProfile?.name, !name.isEmpty {
-                        Text(name)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, -4)
+    private func scanCategories() {
+        guard let profileID = editingProfileID,
+              let idx = settings.profiles.firstIndex(where: { $0.id == profileID }),
+              !settings.profiles[idx].contentPath.isEmpty else { return }
+        let contentPath = settings.profiles[idx].contentPath
+        isScanning = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let found = CategoryScanner.scan(contentPath: contentPath)
+            DispatchQueue.main.async {
+                if idx < settings.profiles.count,
+                   settings.profiles[idx].id == profileID {
+                    let existing = settings.profiles[idx].knownCategories
+                    settings.profiles[idx].knownCategories = mergeCategories(existing, found)
+                    if editingProfileID == profileID {
+                        draft.knownCategories = settings.profiles[idx].knownCategories
                     }
                 }
-                Spacer()
-                Button(isScanning ? "Scanning…" : "Scan Posts") {
-                    // Capture both the path AND profile ID now, before the background thread runs
-                    guard let profileID = settings.selectedProfileID ?? settings.profiles.first?.id,
-                          let idx = settings.profiles.firstIndex(where: { $0.id == profileID }),
-                          !settings.profiles[idx].contentPath.isEmpty else { return }
-                    let contentPath = settings.profiles[idx].contentPath
-                    isScanning = true
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        let found = CategoryScanner.scan(contentPath: contentPath)
-                        DispatchQueue.main.async {
-                            // Write directly to the captured profile index — never drifts
-                            if idx < settings.profiles.count,
-                               settings.profiles[idx].id == profileID {
-                                let existing = settings.profiles[idx].knownCategories
-                                settings.profiles[idx].knownCategories = Self.mergeCategories(existing, found)
-                            }
-                            isScanning = false
-                        }
-                    }
-                }
-                .disabled(settings.contentPath.isEmpty || isScanning)
-            }
-
-            if settings.knownCategories.isEmpty {
-                Text(settings.contentPath.isEmpty
-                     ? "Set up a blog profile in General, then scan."
-                     : "No categories yet. Click \"Scan Posts\" to collect from existing posts.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-            } else {
-                let categoriesBinding = Binding<[String]>(
-                    get: { settings.activeProfile?.knownCategories ?? [] },
-                    set: { newVal in settings.updateActiveProfile { $0.knownCategories = newVal } }
-                )
-                CategoryTagsEditor(categories: categoriesBinding)
-                    .padding(.top, 8)
+                isScanning = false
             }
         }
-        .padding(24)
-        .frame(minHeight: 200)
-    }
-
-    /// Merges two category lists with case-insensitive deduplication (existing takes priority).
-    static func mergeCategories(_ existing: [String], _ new: [String]) -> [String] {
-        var seen = Set<String>()
-        var result: [String] = []
-        for cat in existing + new {
-            if seen.insert(cat.lowercased()).inserted {
-                result.append(cat)
-            }
-        }
-        return result.sorted()
     }
 }
 

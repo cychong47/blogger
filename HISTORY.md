@@ -4,6 +4,13 @@
 
 ## Released
 
+### Settings Master-Detail Redesign
+- Settings → General tab replaced with a master-detail layout: profile list on the left, full profile detail (paths + subpath templates + categories) on the right — everything about a blog in one place
+- Categories tab removed; category scanning and management now live in the General tab detail panel
+- Live write-back: all profile edits are saved instantly without a Save/Cancel dialog
+- "Set as Active" button in the detail panel promotes any profile to the active blog
+- Settings window widened to 740 × 560 to accommodate the split layout
+
 ### Multi-Blog Profile Support
 - Introduced `BlogProfile` model: each profile stores name, blog root, content path, images path, per-blog subpath templates, and categories
 - Settings → General tab replaced with a blog profiles list (add, edit, delete, select active profile)

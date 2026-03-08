@@ -21,7 +21,7 @@ Drag photos from Photos.app or Finder, write a post in the split-view editor, an
 - **Multi-blog profiles** — manage multiple Hugo sites; each profile has its own paths, subpath templates, and categories; switch active blog in the post editor
 - **Settings export / import** — transfer all profiles and configuration to another Mac via a JSON file
 - **Theme switcher** — System / Light / Dark, fully adaptive warm-cream / dark-charcoal palette
-- **Tabbed Settings window** — General, Categories, and Appearance tabs (no clipped content)
+- **Tabbed Settings window** — General (master-detail) and Appearance tabs; categories management merged into the General detail panel
 - **Quit on window close** — closing the main window also dismisses Settings and quits the app
 
 ---
@@ -48,7 +48,7 @@ Leave a subpath empty to put all files flat in the root directory.
 
 The image URL prefix (used in markdown `![]()` references) is automatically derived from the blog root and images path — no manual configuration needed.
 
-**Categories — Scan Posts:** In Settings → **Categories**, click **Scan Posts** to collect all existing `categories:` values from the active profile's Hugo markdown files. Re-scan any time after adding posts outside the app.
+**Categories — Scan Posts:** In Settings → **General**, select a blog profile and click **Scan Posts** to collect all existing `categories:` values from that profile's Hugo markdown files. Re-scan any time after adding posts outside the app.
 
 **Transferring settings to another Mac:**
 
