@@ -30,7 +30,8 @@ enum CategoryScanner {
     ///     - Cat1
     ///     - Cat2
     static func parseFrontmatterCategories(from content: String) -> [String] {
-        let quoteChars = CharacterSet(charactersIn: "\"'")
+        // Include curly/smart quotes so they are stripped the same way AppSettings.init does
+        let quoteChars = CharacterSet(charactersIn: "\"\'\u{201C}\u{201D}\u{2018}\u{2019}")
 
         // Single-line: categories: [Cat1, "Cat2", ...]
         if let range = content.range(

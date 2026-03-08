@@ -10,12 +10,13 @@ private struct SettingsExport: Codable {
 // MARK: - mergeCategories (file-level helper)
 
 private func mergeCategories(_ existing: [String], _ new: [String]) -> [String] {
+    let quoteChars = CharacterSet(charactersIn: "\"\'\u{201C}\u{201D}\u{2018}\u{2019}")
     var seen = Set<String>()
     var result: [String] = []
     for cat in existing + new {
-        if seen.insert(cat.lowercased()).inserted {
-            result.append(cat)
-        }
+        let cleaned = cat.trimmingCharacters(in: quoteChars)
+        guard !cleaned.isEmpty, seen.insert(cleaned.lowercased()).inserted else { continue }
+        result.append(cleaned)
     }
     return result.sorted()
 }
