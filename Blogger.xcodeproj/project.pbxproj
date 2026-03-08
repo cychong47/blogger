@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		19171811019C3AD5A5CA5696 /* CategoryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5452EDD7EEB33FDE32F4CFC6 /* CategoryScanner.swift */; };
 		2A2F6ED7BB5EF8C5BC2A08D6 /* SharedContainerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E52C4F20A2A62A64FC0C6F9 /* SharedContainerService.swift */; };
 		38B9D0308F7179D66250A148 /* BloggerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362006FED2645BD41AF8F85B /* BloggerApp.swift */; };
 		58EF1896AF84E924A05ACF2A /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7353E8871ABB6A3D09990D39 /* Constants.swift */; };
@@ -18,12 +19,17 @@
 		AD5A941747405C84C2F97F55 /* PostEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E85C967F3720B3665E530430 /* PostEditorView.swift */; };
 		AECF71FF08B739AF1A96C417 /* MarkdownGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3ECABBDBD629A0705789F72 /* MarkdownGenerator.swift */; };
 		AF813366FA22FBF8C39BBA7F /* PendingPost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132B1F992D1E39806DDB453 /* PendingPost.swift */; };
+		B06E87B5E6C2B55E38DB818C /* DropTargetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1220F8FB461B75589DC7265 /* DropTargetView.swift */; };
 		C4FCFBD1DD6761A33B0E798B /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B6E26B5BF84BFCE846D220 /* WelcomeView.swift */; };
 		D39CC53E11A77AF41D711A15 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F7B5EFEF89109C760E9FD3CB /* ImageIO.framework */; };
+		F50C1058A4E22E7E600B2813 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 155D6C9578C2BA1FD8879397 /* Assets.xcassets */; };
+		F71D07A2549F2C4608D5CC2D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0620724DE52ACDCD01B51CBF /* Theme.swift */; };
 		FF9AA02EA5D048996321BF1D /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C538679C063E36BAF48EDF16 /* ShareViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0620724DE52ACDCD01B51CBF /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		155D6C9578C2BA1FD8879397 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2E52C4F20A2A62A64FC0C6F9 /* SharedContainerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedContainerService.swift; sourceTree = "<group>"; };
 		362006FED2645BD41AF8F85B /* BloggerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloggerApp.swift; sourceTree = "<group>"; };
 		3AB9307E546CF780F4C4D77F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -32,10 +38,12 @@
 		5132B1F992D1E39806DDB453 /* PendingPost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPost.swift; sourceTree = "<group>"; };
 		52B6E26B5BF84BFCE846D220 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		542FCAD7D38A1A41E85FDB09 /* BloggerShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BloggerShareExtension.entitlements; sourceTree = "<group>"; };
+		5452EDD7EEB33FDE32F4CFC6 /* CategoryScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryScanner.swift; sourceTree = "<group>"; };
 		618D4FB4EF944E5FABA36A00 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7353E8871ABB6A3D09990D39 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		805440A92592DDE2FD1341D3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A76E8C6B19AB9018300E5821 /* BloggerShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BloggerShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1220F8FB461B75589DC7265 /* DropTargetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropTargetView.swift; sourceTree = "<group>"; };
 		BD76A58DE1BD8D8333B55BB7 /* Blogger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blogger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0E86D73425A36828F85F667 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		C538679C063E36BAF48EDF16 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
@@ -69,6 +77,7 @@
 		111744FA440F91197515761B /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				5452EDD7EEB33FDE32F4CFC6 /* CategoryScanner.swift */,
 				E3ECABBDBD629A0705789F72 /* MarkdownGenerator.swift */,
 				C5B230E412BF7E2A71C9BDB9 /* PhotoExporter.swift */,
 				2E52C4F20A2A62A64FC0C6F9 /* SharedContainerService.swift */,
@@ -90,8 +99,10 @@
 		46A6E98982AB2E78BD2118C6 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B1220F8FB461B75589DC7265 /* DropTargetView.swift */,
 				E85C967F3720B3665E530430 /* PostEditorView.swift */,
 				3AB9307E546CF780F4C4D77F /* SettingsView.swift */,
+				0620724DE52ACDCD01B51CBF /* Theme.swift */,
 				52B6E26B5BF84BFCE846D220 /* WelcomeView.swift */,
 			);
 			path = Views;
@@ -129,6 +140,7 @@
 		EDF9DFBF4B286E96B5A5F978 /* blogger */ = {
 			isa = PBXGroup;
 			children = (
+				155D6C9578C2BA1FD8879397 /* Assets.xcassets */,
 				F96797000AC456DE4B4B64D3 /* Blogger.entitlements */,
 				362006FED2645BD41AF8F85B /* BloggerApp.swift */,
 				618D4FB4EF944E5FABA36A00 /* ContentView.swift */,
@@ -174,6 +186,7 @@
 			buildConfigurationList = 8A06B4A58FAB0A34219530D9 /* Build configuration list for PBXNativeTarget "Blogger" */;
 			buildPhases = (
 				7A05F451C204457494A64A66 /* Sources */,
+				2D2CFF4570C65CF0169FA683 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -225,6 +238,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		2D2CFF4570C65CF0169FA683 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F50C1058A4E22E7E600B2813 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6A3B0EFE1AA91E75D4971029 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -240,8 +264,10 @@
 			files = (
 				5A3937222DC5CF8A11577922 /* AppSettings.swift in Sources */,
 				38B9D0308F7179D66250A148 /* BloggerApp.swift in Sources */,
+				19171811019C3AD5A5CA5696 /* CategoryScanner.swift in Sources */,
 				58EF1896AF84E924A05ACF2A /* Constants.swift in Sources */,
 				70976E97AA613B3F0036E75D /* ContentView.swift in Sources */,
+				B06E87B5E6C2B55E38DB818C /* DropTargetView.swift in Sources */,
 				AECF71FF08B739AF1A96C417 /* MarkdownGenerator.swift in Sources */,
 				AF813366FA22FBF8C39BBA7F /* PendingPost.swift in Sources */,
 				7541537CC7770EEBC0FB1089 /* PhotoExporter.swift in Sources */,
@@ -249,6 +275,7 @@
 				77CCD44FA2DC1E93161EBC8D /* SettingsView.swift in Sources */,
 				2A2F6ED7BB5EF8C5BC2A08D6 /* SharedContainerService.swift in Sources */,
 				85BFE8551284696B4FCA0420 /* SlugGenerator.swift in Sources */,
+				F71D07A2549F2C4608D5CC2D /* Theme.swift in Sources */,
 				C4FCFBD1DD6761A33B0E798B /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

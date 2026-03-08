@@ -48,6 +48,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.blogger.app
         INFOPLIST_FILE: blogger/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   BloggerShareExtension:
     type: app-extension
