@@ -47,9 +47,10 @@ class AppSettings: ObservableObject {
         self.staticImagesSubpath = defaults.string(forKey: Constants.UserDefaultsKeys.staticImagesSubpath) ?? ""
         // Normalize: strip stray quote characters and deduplicate, then persist back
         let raw = defaults.stringArray(forKey: Constants.UserDefaultsKeys.knownCategories) ?? []
+        let quoteChars = CharacterSet(charactersIn: "\"\'\u{201C}\u{201D}\u{2018}\u{2019}")
         var seen = Set<String>()
         let normalized = raw
-            .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"'")) }
+            .map { $0.trimmingCharacters(in: quoteChars) }
             .filter { !$0.isEmpty && seen.insert($0).inserted }
         self.knownCategories = normalized
         defaults.set(normalized, forKey: Constants.UserDefaultsKeys.knownCategories)

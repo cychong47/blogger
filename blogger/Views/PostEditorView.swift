@@ -159,9 +159,10 @@ struct PostEditorView: View {
                         .background(Theme.card)
                         .cornerRadius(6)
                         .onSubmit {
+                            let quoteChars = CharacterSet(charactersIn: "\"\'\u{201C}\u{201D}\u{2018}\u{2019}")
                             let trimmed = newCategoryText
                                 .trimmingCharacters(in: .whitespacesAndNewlines)
-                                .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+                                .trimmingCharacters(in: quoteChars)
                             if !trimmed.isEmpty && !pendingPost.categories.contains(trimmed) {
                                 pendingPost.categories.append(trimmed)
                                 updateFrontmatterCategories(pendingPost.categories)
