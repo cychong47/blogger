@@ -65,7 +65,17 @@ class AppSettings: ObservableObject {
         // Load from new multi-blog format
         if let data = defaults.data(forKey: Constants.UserDefaultsKeys.blogProfiles),
            let decoded = try? JSONDecoder().decode([BlogProfile].self, from: data) {
-            self.profiles = decoded
+            // Normalize categories in every profile: strip stray quotes, case-insensitive dedup
+            let quoteChars = CharacterSet(charactersIn: "\"\'\u{201C}\u{201D}\u{2018}\u{2019}")
+            self.profiles = decoded.map { profile in
+                var p = profile
+                var seen = Set<String>()
+                p.knownCategories = p.knownCategories
+                    .map { $0.trimmingCharacters(in: quoteChars) }
+                    .filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
+                    .sorted()
+                return p
+            }
             if let idStr = defaults.string(forKey: Constants.UserDefaultsKeys.selectedProfileID),
                let id = UUID(uuidString: idStr) {
                 self.selectedProfileID = id

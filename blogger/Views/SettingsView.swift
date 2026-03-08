@@ -355,15 +355,20 @@ private struct CategoriesTab: View {
                 }
                 Spacer()
                 Button(isScanning ? "Scanning…" : "Scan Posts") {
-                    guard !settings.contentPath.isEmpty else { return }
+                    // Capture both the path AND profile ID now, before the background thread runs
+                    guard let profileID = settings.selectedProfileID ?? settings.profiles.first?.id,
+                          let idx = settings.profiles.firstIndex(where: { $0.id == profileID }),
+                          !settings.profiles[idx].contentPath.isEmpty else { return }
+                    let contentPath = settings.profiles[idx].contentPath
                     isScanning = true
-                    let contentPath = settings.contentPath
                     DispatchQueue.global(qos: .userInitiated).async {
                         let found = CategoryScanner.scan(contentPath: contentPath)
                         DispatchQueue.main.async {
-                            let existing = settings.knownCategories
-                            settings.updateActiveProfile {
-                                $0.knownCategories = Self.mergeCategories(existing, found)
+                            // Write directly to the captured profile index — never drifts
+                            if idx < settings.profiles.count,
+                               settings.profiles[idx].id == profileID {
+                                let existing = settings.profiles[idx].knownCategories
+                                settings.profiles[idx].knownCategories = Self.mergeCategories(existing, found)
                             }
                             isScanning = false
                         }
