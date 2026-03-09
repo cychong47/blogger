@@ -435,9 +435,9 @@ private struct AppearanceTab: View {
                 Spacer()
             }
             .padding(.top, 4)
+            Spacer()
         }
         .padding(24)
-        .frame(minHeight: 120)
     }
 }
 
